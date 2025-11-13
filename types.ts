@@ -36,6 +36,19 @@ export interface ExpenseItem {
   tripId?: string;
 }
 
+export type ParsedReceiptData = {
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+};
+
+export type ParseResult = {
+  status: "success" | "error";
+  data: ParsedReceiptData;
+  message?: string; // The error message, if any
+};
+
 export enum Page {
   Upload,
   Trips,

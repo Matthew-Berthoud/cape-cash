@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Receipt, ExpenseItem } from "../types";
+import { ParseResult, Receipt, ExpenseItem } from "../types";
 import { parseReceipt } from "../services/geminiService";
 
 interface FileUploadPageProps {
@@ -28,7 +28,7 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const files = event.target.files;
+    const files: File[] = event.target.files;
     if (!files) return;
 
     setIsProcessing(true);
@@ -58,6 +58,8 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
         updateStatus("parsing");
 
         try {
+          // The `catch` block now only handles errors from `fileToBase64`
+          // or other unexpected setup issues.
           const base64 = await fileToBase64(file);
           const receiptId = crypto.randomUUID();
           const newReceipt: Receipt = {
@@ -65,27 +67,43 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
             base64,
             fileName: file.name,
           };
-          allNewReceipts.push(newReceipt);
+          allNewReceipts.push(newReceipt); // Add receipt regardless of parse
 
-          const parsedData = await parseReceipt(base64);
+          // --- MODIFIED PARSING LOGIC ---
+          // This call no longer throws on *parse* errors
+          const result = await parseReceipt(base64);
 
+          // We *always* create an expense item,
+          // using the data returned from parseReceipt
+          // (which will be default data on failure)
           const newExpenseItem: ExpenseItem = {
             id: crypto.randomUUID(),
             receiptImageIds: [receiptId],
-            date: parsedData.date || new Date().toISOString().split("T")[0],
-            category: parsedData.category,
+            date: result.data.date, // Use data from result
+            category: result.data.category,
             project: "Overhead",
-            description: parsedData.description,
-            amount: parsedData.amount,
+            description: result.data.description,
+            amount: result.data.amount,
           };
           allNewExpenseItems.push(newExpenseItem);
-          updateStatus("success", undefined, newReceipt);
+
+          // Now, update the UI status based on the result
+          if (result.status === "success") {
+            updateStatus("success", undefined, newReceipt);
+          } else {
+            // It's an error, but we've created a default item.
+            // Show the error message in the UI.
+            updateStatus("error", result.message, newReceipt);
+          }
+          // --- END MODIFIED LOGIC ---
         } catch (error) {
-          console.error(error);
+          // This `catch` block is now for *file reading* or other
+          // unexpected errors, NOT for parsing.
+          console.error("Failed to process file:", error);
           const message =
             error instanceof Error
               ? error.message
-              : "An unknown error occurred.";
+              : "An unknown file error occurred.";
           updateStatus("error", message);
         }
       }),
