@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Receipt } from '../types';
+import React, { useState, useEffect } from "react";
+import { Receipt } from "../types";
 
 interface ManageReceiptsModalProps {
   isOpen: boolean;
@@ -9,8 +9,16 @@ interface ManageReceiptsModalProps {
   selectedReceiptIds: string[];
 }
 
-const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({ isOpen, onClose, onSave, allReceipts, selectedReceiptIds }) => {
-  const [currentSelection, setCurrentSelection] = useState<Set<string>>(new Set(selectedReceiptIds));
+const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  allReceipts,
+  selectedReceiptIds,
+}) => {
+  const [currentSelection, setCurrentSelection] = useState<Set<string>>(
+    new Set(selectedReceiptIds),
+  );
 
   useEffect(() => {
     setCurrentSelection(new Set(selectedReceiptIds));
@@ -19,7 +27,7 @@ const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({ isOpen, onClo
   if (!isOpen) return null;
 
   const handleToggle = (receiptId: string) => {
-    setCurrentSelection(prev => {
+    setCurrentSelection((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(receiptId)) {
         newSelection.delete(receiptId);
@@ -35,26 +43,36 @@ const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({ isOpen, onClo
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" aria-modal="true" role="dialog">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4"
+      aria-modal="true"
+      role="dialog"
+    >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
           <h3 className="text-lg font-medium leading-6 text-slate-900 dark:text-slate-100">
             Manage Associated Receipts
           </h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Select the receipts for this expense item.</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Select the receipts for this expense item.
+          </p>
         </div>
-        
+
         <div className="p-6 overflow-y-auto">
           {allReceipts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {allReceipts.map(receipt => (
-                <div key={receipt.id} className="relative cursor-pointer" onClick={() => handleToggle(receipt.id)}>
-                  <img 
-                    src={`data:image/jpeg;base64,${receipt.base64}`} 
-                    alt={receipt.fileName} 
-                    className={`w-full h-32 object-cover rounded-lg transition-all ${currentSelection.has(receipt.id) ? 'ring-4 ring-indigo-500' : 'ring-2 ring-transparent'}`} 
+              {allReceipts.map((receipt) => (
+                <div
+                  key={receipt.id}
+                  className="relative cursor-pointer"
+                  onClick={() => handleToggle(receipt.id)}
+                >
+                  <img
+                    src={`data:image/jpeg;base64,${receipt.base64}`}
+                    alt={receipt.fileName}
+                    className={`w-full h-32 object-cover rounded-lg transition-all ${currentSelection.has(receipt.id) ? "ring-4 ring-indigo-500" : "ring-2 ring-transparent"}`}
                   />
-                  <div 
+                  <div
                     className="absolute top-2 right-2 bg-white dark:bg-slate-800 rounded-full h-6 w-6 flex items-center justify-center cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -68,17 +86,22 @@ const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({ isOpen, onClo
                       className="h-4 w-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 pointer-events-none"
                     />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-1 rounded-b-lg truncate" title={receipt.fileName}>
+                  <div
+                    className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white text-xs p-1 rounded-b-lg truncate"
+                    title={receipt.fileName}
+                  >
                     {receipt.fileName}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-             <p className="text-center text-slate-500 dark:text-slate-400">No receipts have been uploaded yet.</p>
+            <p className="text-center text-slate-500 dark:text-slate-400">
+              No receipts have been uploaded yet.
+            </p>
           )}
         </div>
-        
+
         <div className="bg-slate-50 dark:bg-slate-700 px-6 py-4 flex justify-end space-x-3 rounded-b-lg">
           <button
             type="button"
@@ -101,3 +124,4 @@ const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({ isOpen, onClo
 };
 
 export default ManageReceiptsModal;
+

@@ -1,26 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Page, Receipt, ExpenseItem, Trip } from './types';
-import useLocalStorage from './hooks/useLocalStorage';
-import { LOCAL_STORAGE_KEYS } from './constants';
-import FileUploadPage from './components/FileUploadPage';
-import TripsPage from './components/TripsPage';
-import ExpenseFormPage from './components/ExpenseFormPage';
-import PdfPreviewPage from './components/PdfPreviewPage';
-import { db } from './services/idb';
+import React, { useState, useEffect } from "react";
+import { Page, Receipt, ExpenseItem, Trip } from "./types";
+import useLocalStorage from "./hooks/useLocalStorage";
+import { LOCAL_STORAGE_KEYS } from "./constants";
+import FileUploadPage from "./components/FileUploadPage";
+import TripsPage from "./components/TripsPage";
+import ExpenseFormPage from "./components/ExpenseFormPage";
+import PdfPreviewPage from "./components/PdfPreviewPage";
+import { db } from "./services/idb";
 
 function App() {
   const [page, setPage] = useState<Page>(Page.Upload);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
-  const [expenseItems, setExpenseItems] = useLocalStorage<ExpenseItem[]>(LOCAL_STORAGE_KEYS.EXPENSE_ITEMS, []);
-  const [trips, setTrips] = useLocalStorage<Trip[]>(LOCAL_STORAGE_KEYS.TRIPS, []);
+  const [expenseItems, setExpenseItems] = useLocalStorage<ExpenseItem[]>(
+    LOCAL_STORAGE_KEYS.EXPENSE_ITEMS,
+    [],
+  );
+  const [trips, setTrips] = useLocalStorage<Trip[]>(
+    LOCAL_STORAGE_KEYS.TRIPS,
+    [],
+  );
 
   // Load receipts from IndexedDB on initial render
   useEffect(() => {
     db.receipts.toArray().then(setReceipts);
   }, []);
 
-  const updateReceipts = async (newReceipts: Receipt[] | ((prev: Receipt[]) => Receipt[])) => {
-    const receiptsToStore = newReceipts instanceof Function ? newReceipts(receipts) : newReceipts;
+  const updateReceipts = async (
+    newReceipts: Receipt[] | ((prev: Receipt[]) => Receipt[]),
+  ) => {
+    const receiptsToStore =
+      newReceipts instanceof Function ? newReceipts(receipts) : newReceipts;
     setReceipts(receiptsToStore);
     await db.receipts.clear();
     await db.receipts.bulkAdd(receiptsToStore);
@@ -67,7 +76,14 @@ function App() {
           />
         );
       default:
-        return <FileUploadPage receipts={receipts} setReceipts={updateReceipts} setExpenseItems={setExpenseItems} onContinue={() => setPage(Page.Trips)} />;
+        return (
+          <FileUploadPage
+            receipts={receipts}
+            setReceipts={updateReceipts}
+            setExpenseItems={setExpenseItems}
+            onContinue={() => setPage(Page.Trips)}
+          />
+        );
     }
   };
 
@@ -88,3 +104,4 @@ function App() {
 }
 
 export default App;
+

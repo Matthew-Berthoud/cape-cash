@@ -1,4 +1,3 @@
-
 export interface Receipt {
   id: string;
   base64: string;
@@ -15,14 +14,14 @@ export interface Trip {
   project: string;
   purpose: string;
   startDate: string;
-  endDate:string;
+  endDate: string;
   location: {
     city?: string;
     state?: string;
     zip?: string;
   };
   perDiemRates: PerDiemRates | null;
-  fetchStatus: 'idle' | 'loading' | 'success' | 'error';
+  fetchStatus: "idle" | "loading" | "success" | "error";
   errorMessage?: string;
 }
 
@@ -43,3 +42,4 @@ export enum Page {
   Form,
   Preview,
 }
+

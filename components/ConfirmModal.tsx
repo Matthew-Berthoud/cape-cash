@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -8,19 +8,30 @@ interface ConfirmModalProps {
   children: React.ReactNode;
 }
 
-const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm, title, children }) => {
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  children,
+}) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center" aria-modal="true" role="dialog">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center"
+      aria-modal="true"
+      role="dialog"
+    >
       <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-sm w-full m-4">
         <div className="p-6">
-          <h3 className="text-lg font-medium leading-6 text-slate-900 dark:text-slate-100" id="modal-title">
+          <h3
+            className="text-lg font-medium leading-6 text-slate-900 dark:text-slate-100"
+            id="modal-title"
+          >
             {title}
           </h3>
-          <div className="mt-2">
-            {children}
-          </div>
+          <div className="mt-2">{children}</div>
         </div>
         <div className="bg-slate-50 dark:bg-slate-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
           <button
@@ -44,3 +55,4 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ isOpen, onClose, onConfirm,
 };
 
 export default ConfirmModal;
+
