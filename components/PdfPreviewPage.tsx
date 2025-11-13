@@ -116,28 +116,44 @@ const PdfPreviewPage: React.FC<PdfPreviewPageProps> = ({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const generatePreview = useCallback(async () => {
-    if (expenseItems.length === 0) {
-      setPdfUrl(null);
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const doc = await generatePdfDoc(expenseItems, receipts);
-      const url = doc.output("datauristring");
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Failed to generate PDF preview:", error);
-      setPdfUrl(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [expenseItems, receipts]);
-
   useEffect(() => {
+    let objectUrl: string | null = null; // Store URL for cleanup
+
+    const generatePreview = async () => {
+      if (expenseItems.length === 0) {
+        setPdfUrl(null);
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const doc = await generatePdfDoc(expenseItems, receipts);
+
+        // 1. Output as a 'blob' instead of 'datauristring'
+        const blob = doc.output("blob");
+
+        // 2. Create an object URL from the blob
+        objectUrl = URL.createObjectURL(blob);
+
+        // 3. Set this URL in state
+        setPdfUrl(objectUrl);
+      } catch (error) {
+        console.error("Failed to generate PDF preview:", error);
+        setPdfUrl(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     generatePreview();
-  }, [generatePreview]);
+
+    // 4. Cleanup function: Revoke the object URL
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [expenseItems, receipts]); // Re-run when items or receipts change
 
   const handleDownload = async () => {
     if (!pdfUrl) return;
