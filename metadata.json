@@ -1,0 +1,5 @@
+{
+  "name": "Automated Expense Reimbursement App",
+  "description": "An application to automate expense reimbursement requests by parsing receipt photos using AI, allowing users to edit and export the data as a PDF.",
+  "requestFramePermissions": []
+}
