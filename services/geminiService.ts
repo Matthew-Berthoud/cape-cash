@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { CATEGORIES } from "../constants";
 import { ParsedReceiptData, ParseResult } from "@/types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Schema remains the same
 const receiptSchema = {

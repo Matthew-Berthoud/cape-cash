@@ -1,6 +1,5 @@
 import { Trip, PerDiemRates } from "../types";
 
-const GSA_API_KEY = "ZCYft13RmQdXaJwX2nceymsd8IDx6BYzP6Qzv7gy";
 const BASE_URL = "https://api.gsa.gov/travel/perdiem/v2/rates";
 
 function getFiscalYear(dateString: string): number {
@@ -12,7 +11,7 @@ function getFiscalYear(dateString: string): number {
 }
 
 async function fetchRates(endpoint: string) {
-  const url = `${BASE_URL}/${endpoint}?api_key=${GSA_API_KEY}`;
+  const url = `${BASE_URL}/${endpoint}?api_key=${process.env.GSA_API_KEY}`;
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`GSA API request failed with status ${response.status}`);
