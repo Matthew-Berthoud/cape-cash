@@ -1,37 +1,9 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { CATEGORIES } from "../constants";
 import { ParsedReceiptData, ParseResult } from "@/types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Your new Go backend URL
+const API_BASE_URL = "http://localhost:8080/api/v1";
 
-// Schema remains the same
-const receiptSchema = {
-  type: Type.OBJECT,
-  properties: {
-    date: {
-      type: Type.STRING,
-      description:
-        "The date of the transaction in 'YYYY-MM-DD' format. If the year is not present, assume the current year.",
-    },
-    description: {
-      type: Type.STRING,
-      description:
-        "A concise description of the vendor or purchase (e.g., 'Starbucks Coffee', 'Uber Ride', 'Walmart').",
-    },
-    amount: {
-      type: Type.NUMBER,
-      description:
-        "The final total amount as a number, without currency symbols or commas.",
-    },
-    category: {
-      type: Type.STRING,
-      description: `Based on the vendor and items, choose the most appropriate category from the provided list.`,
-      enum: CATEGORIES,
-    },
-  },
-  required: ["date", "description", "amount", "category"],
-};
-
+// We still keep the default data structure for frontend error handling
 const defaultParsedData: ParsedReceiptData = {
   date: new Date().toISOString().split("T")[0], // Today's date
   description: "Manual Entry Required",
@@ -39,66 +11,40 @@ const defaultParsedData: ParsedReceiptData = {
   category: "8190 G&A Office supplies", // Your default category
 };
 
+/**
+ * Calls your Go backend to parse the receipt.
+ * The backend handles the Gemini API call and all retry logic.
+ */
 export async function parseReceipt(base64Image: string): Promise<ParseResult> {
-  const imagePart = {
-    inlineData: {
-      mimeType: "image/jpeg",
-      data: base64Image,
-    },
-  };
+  try {
+    const response = await fetch(`${API_BASE_URL}/parse-receipt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // The Go backend expects this exact JSON structure
+      body: JSON.stringify({ base64Image: base64Image }),
+    });
 
-  const textPart = {
-    text: `Analyze the provided receipt image. Extract the transaction date, a short description of the vendor, the total amount, and select the best category from the list. If it is a grocery reciept it's probably 9080 Employee Morale. The default category should be '8190 G&A Office supplies' if unsure.`,
-  };
+    // Your Go backend is designed to return a ParseResult object
+    // on both success (status 200) and failure (status 500)
+    const result: ParseResult = await response.json();
 
-  const maxRetries = 3;
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`Parsing receipt: Attempt ${attempt} of ${maxRetries}...`);
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: { parts: [imagePart, textPart] },
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: receiptSchema,
-        },
-      });
-
-      const jsonString = response.text;
-      const parsedJson = JSON.parse(jsonString);
-
-      if (!CATEGORIES.includes(parsedJson.category)) {
-        console.warn(
-          `Gemini returned non-standard category: ${parsedJson.category}. Defaulting.`,
-        );
-        parsedJson.category = "8190 G&A Office supplies";
-      }
-
-      console.log("Successfully parsed receipt:", { parsedJson });
-
-      // ** SUCCESS RETURN **
-      return { status: "success", data: parsedJson };
-    } catch (error) {
-      console.error(`Attempt ${attempt} failed:`, error);
-      lastError = error as Error;
-      // Optional delay here
+    if (!response.ok) {
+      // The error message comes from the backend's JSON response
+      throw new Error(result.message || "Failed to parse receipt from backend");
     }
+
+    // This is the { status: "success", data: ... } object
+    console.log("Successfully parsed receipt via backend:", result.data);
+    return result;
+  } catch (error) {
+    console.error("Error calling backend to parse receipt:", error);
+    // Return a standard error response
+    return {
+      status: "error",
+      data: defaultParsedData,
+      message: (error as Error).message,
+    };
   }
-
-  // ** FAILURE RETURN (NO THROW) **
-  // All retries have failed
-  console.error("All retry attempts failed.");
-  const errorMessage = `Failed to parse receipt after ${maxRetries} attempts. Last error: ${
-    lastError?.message || "Unknown error"
-  }`;
-
-  return {
-    status: "error",
-    data: defaultParsedData, // Return default data
-    message: errorMessage,
-  };
 }
-

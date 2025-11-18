@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/main ./main.go"
+bin = "./tmp/main"
+watch_dir = ["."]
+include_ext = ["go"]
+exclude_dir = ["tmp"]
+log = "air.log"
+
+[log]
+time = true

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/generative-ai-go/genai"
+	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/api/option"
 )
@@ -114,6 +115,11 @@ type AppState struct {
 
 func main() {
 	// 1. Load API Keys
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	gsaKey := os.Getenv("GSA_API_KEY")
 	geminiKey := os.Getenv("GEMINI_API_KEY")
 
