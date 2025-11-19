@@ -20,6 +20,10 @@ import (
 	"google.golang.org/genai"
 )
 
+const (
+	PROMPT = "Analyze the provided receipt image. Extract the transaction date, a short description of the vendor, the total amount, and select the best category from the list. If it is a grocery receipt it's probably 9080 Employee Morale. The default category should be '8190 G&A Office supplies' if unsure."
+)
+
 // func main() {
 // 	err := godotenv.Load()
 // 	if err != nil {
@@ -64,25 +68,24 @@ import (
 // 	maxRetries      = 3
 // )
 
-// CATEGORIES mimics the TypeScript constant
-// var CATEGORIES = []string{
-// 	"5400 Direct Travel",
-// 	"5450 Direct Lodging",
-// 	"5500 Direct Meals and Incidental",
-// 	"6120 Fringe Staff Education",
-// 	"7336 OVERHEAD COSTS:OH Seminars/Trainings",
-// 	"7580 OH Travel",
-// 	"7585 OH Business Meals",
-// 	"8190 G&A Office supplies",
-// 	"8197 G&A Office parking/tolls",
-// 	"8207 G&A Conference/Seminar",
-// 	"8231 BD Travel",
-// 	"8232 BD Meals",
-// 	"8320 G&A Travel",
-// 	"8321 G&A Business meals",
-// 	"8330 G&A Office supplies",
-// 	"9080 Employee Morale",
-// }
+var CATEGORIES = []string{
+	"5400 Direct Travel",
+	"5450 Direct Lodging",
+	"5500 Direct Meals and Incidental",
+	"6120 Fringe Staff Education",
+	"7336 OVERHEAD COSTS:OH Seminars/Trainings",
+	"7580 OH Travel",
+	"7585 OH Business Meals",
+	"8190 G&A Office supplies",
+	"8197 G&A Office parking/tolls",
+	"8207 G&A Conference/Seminar",
+	"8231 BD Travel",
+	"8232 BD Meals",
+	"8320 G&A Travel",
+	"8321 G&A Business meals",
+	"8330 G&A Office supplies",
+	"9080 Employee Morale",
+}
 
 // --- Structs for API Payloads ---
 
@@ -180,24 +183,50 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bytes, err := os.ReadFile("/Users/matthewberthoud/Downloads/receipts/cooking_class_10.20.25.png")
+	bytes, err := os.ReadFile("/Users/matthewberthoud/Downloads/receipts/keyboard-confirmation.png")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	parts := []*genai.Part{
 		genai.NewPartFromBytes(bytes, "image/jpeg"),
-		genai.NewPartFromText("What is this receipt for, and how much was spent total?"),
+		genai.NewPartFromText(PROMPT),
 	}
 	contents := []*genai.Content{
 		genai.NewContentFromParts(parts, genai.RoleUser),
+	}
+	config := &genai.GenerateContentConfig{
+		ResponseMIMEType: "application/json",
+		ResponseJsonSchema: &genai.Schema{
+			Type: genai.TypeObject,
+			Properties: map[string]*genai.Schema{
+				"date": {
+					Type:        genai.TypeString,
+					Description: "The date of the transaction in 'YYYY-MM-DD' format. If the year is not present, assume the current year.",
+				},
+				"description": {
+					Type:        genai.TypeString,
+					Description: "A concise description of the vendor or purchase (e.g., 'Starbucks Coffee', 'Uber Ride', 'Walmart').",
+				},
+				"amount": {
+					Type:        genai.TypeNumber,
+					Description: "The final total amount as a number, without currency symbols or commas.",
+				},
+				"category": {
+					Type:        genai.TypeString,
+					Description: "Based on the vendor and items, choose the most appropriate category from the provided list.",
+					Enum:        CATEGORIES,
+				},
+			},
+			Required: []string{"date", "description", "amount", "category"},
+		},
 	}
 
 	result, err := client.Models.GenerateContent(
 		ctx,
 		"gemini-2.5-flash",
 		contents,
-		nil,
+		config,
 	)
 	if err != nil {
 		log.Fatal(err)
