@@ -12,14 +12,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type ParseResult struct {
+	Status  string            `json:"status"`
+	Data    ParsedReceiptData `json:"data"`
+	Message string            `json:"message,omitempty"`
+}
+
 type AppState struct {
 	ctx       context.Context
 	gsaKey    string
 	geminiKey string
-}
-
-func (app *AppState) run() {
-
 }
 
 func main() {
@@ -130,16 +132,18 @@ func (app *AppState) handleParseReceipt(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var parseResult ParseResult
+	status := http.StatusOK
 	parsedData, err := parseReceipt(app.ctx, imageBytes)
 	if err != nil {
 		parseResult.Data = DEFAULT_PARSED_DATA
 		parseResult.Message = fmt.Sprint(err)
+		parseResult.Status = "error"
+		status = http.StatusBadRequest
 	} else {
 		parseResult.Data = *parsedData
-		parseResult.Message = "success"
+		parseResult.Status = "success"
 	}
-
-	respondWithJSON(w, http.StatusInternalServerError, parseResult)
+	respondWithJSON(w, status, parseResult)
 }
 
 // --- GSA Handler & Logic ---

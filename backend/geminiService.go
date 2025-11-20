@@ -4,16 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	// "io"
-	// "net/http"
-	// "net/url"
-	// "slices"
-	// "strconv"
-	// "strings"
 	"time"
 
-	// "golang.org/x/sync/errgroup"
-	// "google.golang.org/api/option"
 	"google.golang.org/genai"
 )
 
@@ -57,12 +49,6 @@ type ParsedReceiptData struct {
 	Description string  `json:"description"`
 	Amount      float64 `json:"amount"`
 	Category    string  `json:"category"`
-}
-
-type ParseResult struct {
-	Status  string            `json:"status"`
-	Data    ParsedReceiptData `json:"data"`
-	Message string            `json:"message,omitempty"`
 }
 
 func parseReceipt(ctx context.Context, bytes []byte) (*ParsedReceiptData, error) {
@@ -123,6 +109,7 @@ func parseReceipt(ctx context.Context, bytes []byte) (*ParsedReceiptData, error)
 	}
 
 	// TODO: comment out
+	fmt.Println()
 	fmt.Println("Amount", parsedData.Amount)
 	fmt.Println("Category", parsedData.Category)
 	fmt.Println("Date", parsedData.Date)
