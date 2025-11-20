@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	// "io"
-	"log"
 	// "net/http"
 	// "net/url"
 	// "slices"
@@ -42,6 +41,13 @@ var CATEGORIES = []string{
 	"9080 Employee Morale",
 }
 
+var DEFAULT_PARSED_DATA = ParsedReceiptData{
+	Date:        time.Now().Format(time.DateOnly),
+	Description: "",
+	Amount:      0.0,
+	Category:    "8330 G&A Office supplies",
+}
+
 type ParseReceiptRequest struct {
 	Base64Image string `json:"base64Image"`
 }
@@ -59,20 +65,11 @@ type ParseResult struct {
 	Message string            `json:"message,omitempty"`
 }
 
-func defaultParsedData() ParsedReceiptData {
-	return ParsedReceiptData{
-		Date:        time.Now().Format("2006-01-02"),
-		Description: "",
-		Amount:      0.0,
-		Category:    "8330 G&A Office supplies",
-	}
-}
-
-func parseReceipt(ctx context.Context, bytes []byte) ParsedReceiptData {
+func parseReceipt(ctx context.Context, bytes []byte) (*ParsedReceiptData, error) {
 
 	client, err := genai.NewClient(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		return &DEFAULT_PARSED_DATA, err
 	}
 
 	parts := []*genai.Part{
@@ -116,23 +113,22 @@ func parseReceipt(ctx context.Context, bytes []byte) ParsedReceiptData {
 		config,
 	)
 	if err != nil {
-		log.Fatal(err)
+		return &DEFAULT_PARSED_DATA, err
 	}
-
-	fmt.Println(result.Text())
 
 	var parsedData ParsedReceiptData
 	err = json.Unmarshal([]byte(result.Text()), &parsedData)
 	if err != nil {
-		log.Fatal(err)
+		return &DEFAULT_PARSED_DATA, err
 	}
 
+	// TODO: comment out
 	fmt.Println("Amount", parsedData.Amount)
 	fmt.Println("Category", parsedData.Category)
 	fmt.Println("Date", parsedData.Date)
 	fmt.Println("Description", parsedData.Description)
 
-	return parsedData
+	return &parsedData, nil
 }
 
 // // --- Gemini Handler & Logic ---
