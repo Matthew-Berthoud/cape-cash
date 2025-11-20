@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	// "encoding/json"
 	"fmt"
 	// "io"
 	"log"
@@ -17,148 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	// "golang.org/x/sync/errgroup"
 	// "google.golang.org/api/option"
-	"google.golang.org/genai"
 )
-
-const (
-	PROMPT = "Analyze the provided receipt image. Extract the transaction date, a short description of the vendor, the total amount, and select the best category from the list. If it is a grocery receipt it's probably 9080 Employee Morale. The default category should be '8190 G&A Office supplies' if unsure."
-)
-
-// func main() {
-// 	err := godotenv.Load()
-// 	if err != nil {
-// 		log.Fatal("Error loading .env file")
-// 	}
-//
-// 	gsaKey := os.Getenv("GSA_API_KEY")
-// 	geminiKey := os.Getenv("GEMINI_API_KEY")
-//
-// 	if gsaKey == "" {
-// 		log.Fatal("GSA_API_KEY environment variable not set")
-// 	}
-// 	if geminiKey == "" {
-// 		log.Fatal("GEMINI_API_KEY environment variable not set")
-// 	}
-//
-// 	ctx := context.Background()
-// 	// The client gets the API key from the environment variable `GEMINI_API_KEY`.
-// 	client, err := genai.NewClient(ctx, nil)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-//
-// 	result, err := client.Models.GenerateContent(
-// 		ctx,
-// 		"gemini-2.5-flash",
-// 		genai.Text("Explain how AI works in a few words"),
-// 		nil,
-// 	)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Println(result.Text())
-// }
-
-// --- Constants ---
-
-// const (
-// 	gsaBaseURL      = "http://api.gsa.gov/travel/perdiem/v2"
-// 	geminiModel     = "gemini-2.5-flash"
-// 	defaultCategory = "8190 G&A Office supplies"
-// 	maxRetries      = 3
-// )
-
-var CATEGORIES = []string{
-	"5400 Direct Travel",
-	"5450 Direct Lodging",
-	"5500 Direct Meals and Incidental",
-	"6120 Fringe Staff Education",
-	"7336 OVERHEAD COSTS:OH Seminars/Trainings",
-	"7580 OH Travel",
-	"7585 OH Business Meals",
-	"8190 G&A Office supplies",
-	"8197 G&A Office parking/tolls",
-	"8207 G&A Conference/Seminar",
-	"8231 BD Travel",
-	"8232 BD Meals",
-	"8320 G&A Travel",
-	"8321 G&A Business meals",
-	"8330 G&A Office supplies",
-	"9080 Employee Morale",
-}
-
-// --- Structs for API Payloads ---
-
-// --- Gemini Structs ---
-
-// ParseReceiptRequest is what we expect from our frontend
-// type ParseReceiptRequest struct {
-// 	Base64Image string `json:"base64Image"`
-// }
-//
-// // ParsedReceiptData matches the Gemini schema and TS type
-// type ParsedReceiptData struct {
-// 	Date        string  `json:"date"`
-// 	Description string  `json:"description"`
-// 	Amount      float64 `json:"amount"`
-// 	Category    string  `json:"category"`
-// }
-//
-// // ParseResult matches the TS type
-// type ParseResult struct {
-// 	Status  string            `json:"status"`
-// 	Data    ParsedReceiptData `json:"data"`
-// 	Message string            `json:"message,omitempty"`
-// }
-//
-// // defaultParsedData creates the default failure response data
-// func defaultParsedData() ParsedReceiptData {
-// 	return ParsedReceiptData{
-// 		Date:        time.Now().Format("2006-01-02"),
-// 		Description: "Manual Entry Required",
-// 		Amount:      0.0,
-// 		Category:    defaultCategory,
-// 	}
-// }
-//
-// --- GSA Structs ---
-
-// PerDiemRates matches the TS type
-// type PerDiemRates struct {
-// 	LodgingByMonth []LodgingRate `json:"lodgingByMonth"`
-// 	MIE            float64       `json:"mie"` // M&IE
-// }
-//
-// // LodgingRate is a sub-struct for PerDiemRates
-// type LodgingRate struct {
-// 	Month string  `json:"month"`
-// 	Value float64 `json:"value"`
-// }
-
-// gsaResponse is used to unmarshal the raw GSA API responses
-// type gsaResponse struct {
-// 	Rates []struct {
-// 		Rate []struct {
-// 			Month string `json:"month"`
-// 			Value string `json:"value"` // GSA returns value as string
-// 		} `json:"rate"`
-// 	} `json:"rates"`
-// 	Error *struct {
-// 		Message string `json:"message"`
-// 	} `json:"error"`
-// }
-
-// --- Global App State ---
-
-// AppState holds our API keys and clients
-// type AppState struct {
-// 	gsaKey       string
-// 	geminiKey    string
-// 	gsaClient    *http.Client
-// 	geminiClient *genai.GenerativeModel
-// }
-
-// --- Main Function ---
 
 func main() {
 	err := godotenv.Load()
@@ -178,75 +36,21 @@ func main() {
 
 	ctx := context.Background()
 	// The client gets the API key from the environment variable `GEMINI_API_KEY`.
-	client, err := genai.NewClient(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	bytes, err := os.ReadFile("/Users/matthewberthoud/Downloads/receipts/keyboard-confirmation.png")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	parts := []*genai.Part{
-		genai.NewPartFromBytes(bytes, "image/jpeg"),
-		genai.NewPartFromText(PROMPT),
-	}
-	contents := []*genai.Content{
-		genai.NewContentFromParts(parts, genai.RoleUser),
-	}
-	config := &genai.GenerateContentConfig{
-		ResponseMIMEType: "application/json",
-		ResponseJsonSchema: &genai.Schema{
-			Type: genai.TypeObject,
-			Properties: map[string]*genai.Schema{
-				"date": {
-					Type:        genai.TypeString,
-					Description: "The date of the transaction in 'YYYY-MM-DD' format. If the year is not present, assume the current year.",
-				},
-				"description": {
-					Type:        genai.TypeString,
-					Description: "A concise description of the vendor or purchase (e.g., 'Starbucks Coffee', 'Uber Ride', 'Walmart').",
-				},
-				"amount": {
-					Type:        genai.TypeNumber,
-					Description: "The final total amount as a number, without currency symbols or commas.",
-				},
-				"category": {
-					Type:        genai.TypeString,
-					Description: "Based on the vendor and items, choose the most appropriate category from the provided list.",
-					Enum:        CATEGORIES,
-				},
-			},
-			Required: []string{"date", "description", "amount", "category"},
-		},
+	var parsedData ParsedReceiptData = parseReceipt(ctx, bytes)
+
+	var parseResult = ParseResult{
+		Data:    parsedData,
+		Message: fmt.Sprint(err),
 	}
 
-	result, err := client.Models.GenerateContent(
-		ctx,
-		"gemini-2.5-flash",
-		contents,
-		config,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println(parseResult)
 
-	fmt.Println(result.Text())
-
-	// // Configure the model with the JSON schema
-	// model := client.GenerativeModel(geminiModel)
-	// model.GenerationConfig.ResponseMIMEType = "application/json"
-	// model.GenerationConfig.ResponseSchema = buildReceiptSchema()
-	//
-	// // 3. Create AppState
-	// app := &AppState{
-	// 	gsaKey:       gsaKey,
-	// 	geminiKey:    geminiKey,
-	// 	gsaClient:    &http.Client{Timeout: 15 * time.Second},
-	// 	geminiClient: model,
-	// }
-	//
 	// // 4. Setup Routes
 	// mux := http.NewServeMux()
 	// mux.HandleFunc("/api/v1/parse-receipt", app.handleParseReceipt)
