@@ -453,4 +453,3 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
 };
 
 export default ExpenseFormPage;
-

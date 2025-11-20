@@ -124,4 +124,3 @@ const ManageReceiptsModal: React.FC<ManageReceiptsModalProps> = ({
 };
 
 export default ManageReceiptsModal;
-

@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"google.golang.org/genai"
@@ -49,6 +51,47 @@ type ParsedReceiptData struct {
 	Description string  `json:"description"`
 	Amount      float64 `json:"amount"`
 	Category    string  `json:"category"`
+}
+
+func (app *AppState) handleParseReceipt(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		respondWithError(w, http.StatusMethodNotAllowed, "Only POST method is allowed")
+		return
+	}
+
+	// 1. Decode frontend request
+	var req ParseReceiptRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	defer r.Body.Close()
+
+	if req.Base64Image == "" {
+		respondWithError(w, http.StatusBadRequest, "Missing 'base64Image' in request")
+		return
+	}
+
+	base64String := req.Base64Image
+	imageBytes, err := base64.StdEncoding.DecodeString(base64String)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Cannot decode base64")
+		return
+	}
+
+	var parseResult ParseResult
+	status := http.StatusOK
+	parsedData, err := parseReceipt(app.ctx, imageBytes)
+	if err != nil {
+		parseResult.Data = DEFAULT_PARSED_DATA
+		parseResult.Message = fmt.Sprint(err)
+		parseResult.Status = "error"
+		status = http.StatusBadRequest
+	} else {
+		parseResult.Data = *parsedData
+		parseResult.Status = "success"
+	}
+	respondWithJSON(w, status, parseResult)
 }
 
 func parseReceipt(ctx context.Context, bytes []byte) (*ParsedReceiptData, error) {

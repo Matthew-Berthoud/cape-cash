@@ -248,4 +248,3 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
 };
 
 export default FileUploadPage;
-

@@ -1,54 +1,128 @@
-import { Trip, PerDiemRates } from "../types";
+import { Trip, PerDiemRates, LodgingRate } from "../types";
 
-// Your new Go backend URL
-const API_BASE_URL = "http://localhost:8080/api/v1";
+// The Proxy Endpoint
+const PROXY_BASE_URL = "http://localhost:8080/api/v1/per-diem";
+
+// --- Internal Types for Raw GSA API Response ---
+interface GSARateDetail {
+  month: string;
+  value: string | number; // GSA sometimes returns strings "96"
+}
+
+interface GSAStandardRate {
+  zip: string;
+  city: string;
+  state: string;
+  standardRate: string;
+  meals: string | number; // M&IE Total
+  rate: GSARateDetail[]; // Lodging breakdown
+}
+
+interface GSAResponse {
+  rates?: GSAStandardRate[];
+  error?: {
+    message: string;
+  };
+}
 
 /**
- * Calls your Go backend to fetch per diem rates.
- * The backend handles the GSA API calls and error parsing.
+ * fetchPerDiemRates
+ * 1. Calculates the fiscal year from startDate.
+ * 2. Constructs the GSA API endpoint path (Zip or City/State).
+ * 3. Calls the local Proxy, which forwards to GSA.
+ * 4. Transforms the raw GSA JSON into our App's PerDiemRates format.
  */
 export async function fetchPerDiemRates(
   startDate: string,
   location: Trip["location"],
 ): Promise<PerDiemRates> {
-  // 1. Build the query parameters for our Go backend
-  const params = new URLSearchParams({
-    startDate: startDate,
-  });
-  if (location.zip) {
-    params.set("zip", location.zip);
-  } else if (location.city && location.state) {
-    params.set("city", location.city);
-    params.set("state", location.state);
-  } else {
-    // This check is still valid, as the backend expects one or the other
-    throw new Error("A valid location (City/State or ZIP Code) is required.");
+  // 1. Get Year
+  const year = getYearFromDate(startDate);
+  if (!year) {
+    throw new Error("Invalid Start Date");
   }
+
+  // 2. Build GSA Path
+  // The proxy is at /api/v1/per-diem. We append the GSA path logic here.
+  // GSA API Pattern: rates/zip/{zip}/year/{year} OR rates/city/{city}/state/{state}/year/{year}
+
+  let gsaPath = "";
+
+  if (location.zip) {
+    gsaPath = `rates/zip/${encodeURIComponent(location.zip)}/year/${year}`;
+  } else if (location.city && location.state) {
+    const cityEncoded = encodeURIComponent(location.city);
+    const stateEncoded = encodeURIComponent(location.state);
+    gsaPath = `rates/city/${cityEncoded}/state/${stateEncoded}/year/${year}`;
+  } else {
+    throw new Error("Location must have either a Zip Code or City & State.");
+  }
+
+  // 3. Fetch via Proxy
+  // Note: We treat the proxy base as the root, appending the GSA path.
+  // Ensure your backend proxy handles the path forwarding correctly.
+  const fullUrl = `${PROXY_BASE_URL}/${gsaPath}`;
 
   try {
-    // 2. Make a single GET request to your backend endpoint
-    const response = await fetch(
-      `${API_BASE_URL}/per-diem?${params.toString()}`,
-    );
-
-    const data = await response.json();
+    const response = await fetch(fullUrl);
 
     if (!response.ok) {
-      // 3. If the response is not ok, the 'data' object will be
-      // { "error": "..." } from our Go backend. Throw this error.
-      throw new Error(data.error || "Failed to fetch per diem rates");
+      // Handle HTTP errors (404, 500, etc)
+      if (response.status === 404) {
+        throw new Error("Rates not found for this location/year.");
+      }
+      throw new Error(`Server Error: ${response.statusText}`);
     }
 
-    // 4. On success, the Go backend returns the PerDiemRates object directly
-    return data as PerDiemRates;
+    const rawData: GSAResponse = await response.json();
+
+    // 4. Process Data
+    return processGSAResponse(rawData);
   } catch (error) {
-    console.error("Failed to fetch per diem rates from backend:", error);
-    // Re-throw the error (which now contains the friendly message
-    // from our Go backend, like "Could not find rates...")
-    // so the UI component can catch it and display it.
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("An unknown error occurred while fetching per diem rates");
+    console.error("GSA Fetch Error:", error);
+    if (error instanceof Error) throw error;
+    throw new Error("Unknown error occurred fetching rates");
   }
+}
+
+/**
+ * Transforms raw GSA JSON into our clean PerDiemRates object.
+ */
+function processGSAResponse(data: GSAResponse): PerDiemRates {
+  // Check if GSA returned a specific error message inside JSON
+  if (data.error) {
+    throw new Error(data.error.message);
+  }
+
+  // Validate we actually got rates
+  if (!data.rates || data.rates.length === 0) {
+    throw new Error("No rates found for this location.");
+  }
+
+  const primaryRate = data.rates[0];
+
+  // 1. Extract M&IE (Meals)
+  // GSA returns this as a string sometimes (e.g. "69")
+  const mieValue = Number(primaryRate.meals);
+  if (isNaN(mieValue)) {
+    throw new Error(`Invalid M&IE value received: ${primaryRate.meals}`);
+  }
+
+  // 2. Extract Lodging by Month
+  const lodgingByMonth: LodgingRate[] = (primaryRate.rate || []).map((r) => ({
+    month: r.month, // GSA returns "1", "2", etc.
+    value: Number(r.value),
+  }));
+
+  return {
+    mie: mieValue,
+    lodgingByMonth: lodgingByMonth,
+  };
+}
+
+// Utility to grab year from YYYY-MM-DD
+function getYearFromDate(dateString: string): number {
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return 0;
+  return d.getFullYear();
 }

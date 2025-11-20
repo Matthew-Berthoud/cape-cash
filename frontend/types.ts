@@ -5,8 +5,13 @@ export interface Receipt {
 }
 
 export interface PerDiemRates {
-  lodgingByMonth: { month: string; value: number }[];
+  lodgingByMonth: LodgingRate[];
   mie: number;
+}
+
+export interface LodgingRate {
+  month: string;
+  value: number;
 }
 
 export interface Trip {

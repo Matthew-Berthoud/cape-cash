@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { React, useState } from "react";
 import { Trip } from "../types";
 import { PROJECTS, US_STATES } from "../constants";
 import { fetchPerDiemRates } from "../services/gsaService";
@@ -59,15 +59,20 @@ const TripsPage: React.FC<TripsPageProps> = ({
   };
 
   const handleFetchRates = async (trip: Trip) => {
+    // Reset status
     handleUpdateTrip(trip.id, "fetchStatus", "loading");
     handleUpdateTrip(trip.id, "errorMessage", undefined);
+
     try {
+      // logic moved to gsaService.ts
       const rates = await fetchPerDiemRates(trip.startDate, trip.location);
+
       handleUpdateTrip(trip.id, "perDiemRates", rates);
       handleUpdateTrip(trip.id, "fetchStatus", "success");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unknown error occurred.";
+
       handleUpdateTrip(trip.id, "errorMessage", message);
       handleUpdateTrip(trip.id, "fetchStatus", "error");
     }
@@ -86,7 +91,11 @@ const TripsPage: React.FC<TripsPageProps> = ({
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setDidTravelUS(true)}
-            className={`px-4 py-2 rounded-md font-medium ${didTravelUS === true ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700"}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              didTravelUS === true
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-200 dark:bg-slate-700"
+            }`}
           >
             Yes
           </button>
@@ -95,7 +104,11 @@ const TripsPage: React.FC<TripsPageProps> = ({
               setDidTravelUS(false);
               setTrips([]);
             }}
-            className={`px-4 py-2 rounded-md font-medium ${didTravelUS === false ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700"}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              didTravelUS === false
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-200 dark:bg-slate-700"
+            }`}
           >
             No
           </button>
@@ -272,8 +285,7 @@ const TripsPage: React.FC<TripsPageProps> = ({
                   )}
                   {trip.fetchStatus === "error" && (
                     <p className="text-sm text-red-600 mt-2">
-                      Error: {trip.errorMessage}. Please check the location and
-                      try again, or use a ZIP code.
+                      Error: {trip.errorMessage}
                     </p>
                   )}
                 </div>
@@ -309,4 +321,3 @@ const TripsPage: React.FC<TripsPageProps> = ({
 };
 
 export default TripsPage;
-
