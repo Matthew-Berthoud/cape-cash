@@ -10,17 +10,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type ParseResult struct {
-	Status  string            `json:"status"`
-	Data    ParsedReceiptData `json:"data"`
-	Message string            `json:"message,omitempty"`
-}
-
 type AppState struct {
 	ctx        context.Context
 	gsaKey     string
 	geminiKey  string
-	gsaBaseURL string
+	gsaBaseUrl string
+	client     *http.Client
 }
 
 func main() {
@@ -29,29 +24,30 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	gsaKey := os.Getenv("GSA_API_KEY")
-	geminiKey := os.Getenv("GEMINI_API_KEY")
 	if gsaKey == "" {
 		log.Fatal("GSA_API_KEY environment variable not set")
 	}
+	geminiKey := os.Getenv("GEMINI_API_KEY")
 	if geminiKey == "" {
 		log.Fatal("GEMINI_API_KEY environment variable not set")
+	}
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
 
 	app := AppState{
 		ctx:        context.Background(),
 		gsaKey:     gsaKey,
 		geminiKey:  geminiKey,
-		gsaBaseURL: "https://api.gsa.gov/perdiem/v1",
+		gsaBaseUrl: "https://api.gsa.gov/travel/perdiem/v2/rates",
+		client:     &http.Client{},
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/parse-receipt", app.handleParseReceipt)
 	mux.HandleFunc("/api/v1/per-diem", app.handlePerDiemProxy)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
 	log.Printf("Starting server on port %s...", port)
 	if err := http.ListenAndServe(":"+port, enableCORS(mux)); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
