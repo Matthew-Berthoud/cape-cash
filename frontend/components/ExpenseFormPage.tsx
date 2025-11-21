@@ -93,34 +93,54 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
   };
 
   const checkAndCapAmount = (item: ExpenseItem) => {
+    // 1. Basic Safety Checks
     if (
       typeof item.amount !== "number" ||
       !item.tripId ||
-      item.tripId === "N/A"
+      item.tripId === "N/A" ||
+      !item.date
     ) {
       return item.amount;
     }
+
+    // 2. Find the Trip
     const trip = trips.find((t) => t.id === item.tripId);
-    if (!trip || trip.project !== item.project || !trip.perDiemRates) {
+
+    console.log({ thing: trips });
+
+    // 3. Strict Validation:
+    //    - Trip must exist and have rates
+    //    - Item Project must match Trip Project
+    if (!trip || !trip.perDiemRates || trip.project !== item.project) {
       return item.amount;
     }
 
     let maxAmount: number | null = null;
-    const itemDate = new Date(item.date);
-    const itemMonthName = MONTH_NAMES[itemDate.getMonth()];
 
+    // 4. Get the Correct Month
+    // We split the YYYY-MM-DD string to avoid Timezone shifts (e.g. new Date("2024-03-01") becoming Feb 29)
+    const [_, monthStr] = item.date.split("-");
+    const monthIndex = parseInt(monthStr, 10) - 1; // 0-11
+    const monthName = MONTH_NAMES[monthIndex];
+
+    // 5. Determine Max based on Category
     if (PER_DIEM_CATEGORIES.LODGING.includes(item.category)) {
-      const rate = trip.perDiemRates.lodgingByMonth.find(
-        (r) => r.month === itemMonthName,
-      );
+      // Matches specific month rate
+      // Note: Ensure types.ts uses 'lodging' or 'lodgingByMonth' consistently.
+      // Based on our previous refactor, we used 'lodging'.
+      const rate = trip.perDiemRates.lodging.find((r) => r.month === monthName);
       if (rate) maxAmount = rate.value;
     } else if (PER_DIEM_CATEGORIES.MEALS.includes(item.category)) {
-      maxAmount = trip.perDiemRates.mie;
+      // Matches M&IE Total
+      // Based on our previous refactor, 'mie' is an object with a 'total' property.
+      maxAmount = trip.perDiemRates.mie.total;
     }
 
+    // 6. Apply Cap
     if (maxAmount !== null && item.amount > maxAmount) {
       return maxAmount;
     }
+
     return item.amount;
   };
 

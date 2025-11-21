@@ -20,7 +20,7 @@ export interface MieBreakdown {
 
 // UPDATED: PerDiemRates now stores LodgingRates and the full M&IE breakdown
 export interface PerDiemRates {
-  lodging: LodgingRate[]; // Renamed from lodgingByMonth for consistency
+  lodging: LodgingRate[];
   mie: MieBreakdown;
 }
 
