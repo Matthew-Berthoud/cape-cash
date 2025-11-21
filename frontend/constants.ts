@@ -130,8 +130,3 @@ export const US_STATES = [
   { name: "Wisconsin", abbr: "WI" },
   { name: "Wyoming", abbr: "WY" },
 ];
-
-export const PER_DIEM_CATEGORIES = {
-  LODGING: ["5400 Direct Travel", "5450 Direct Lodging", "8320 G&A Travel"],
-  MEALS: ["5500 Direct Meals and Incidental"],
-};
