@@ -67,8 +67,6 @@ func (app *AppState) handlePerDiemProxy(w http.ResponseWriter, r *http.Request) 
 	zipUrl := app.gsaBaseUrl + "/zip/" + zipCode + "/year/" + year
 	mieUrl := app.gsaBaseUrl + "/conus/mie/" + year
 
-	fmt.Println(zipUrl, mieUrl)
-
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
@@ -119,7 +117,6 @@ func fetchJSON(client *http.Client, rawURL string, apiKey string, target any) er
 	}
 
 	resp, err := client.Do(req)
-	fmt.Println(resp)
 	if err != nil {
 		return err
 	}

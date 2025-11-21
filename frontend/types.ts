@@ -4,27 +4,34 @@ export interface Receipt {
   fileName: string;
 }
 
-export interface PerDiemRates {
-  lodgingByMonth: LodgingRate[];
-  mie: number;
-}
-
 export interface LodgingRate {
   month: string;
   value: number;
 }
 
+// NEW: Interface to store the full M&IE breakdown (Breakfast, Lunch, etc.)
+export interface MieBreakdown {
+  total: number;
+  breakfast: number;
+  lunch: number;
+  dinner: number;
+  incidental: number;
+}
+
+// UPDATED: PerDiemRates now stores LodgingRates and the full M&IE breakdown
+export interface PerDiemRates {
+  lodging: LodgingRate[]; // Renamed from lodgingByMonth for consistency
+  mie: MieBreakdown;
+}
+
+// UPDATED: Trip interface simplified to use a single 'zip' property
 export interface Trip {
   id: string;
   project: string;
   purpose: string;
   startDate: string;
   endDate: string;
-  location: {
-    city?: string;
-    state?: string;
-    zip?: string;
-  };
+  zip: string; // Simplified: Replaced the 'location' object
   perDiemRates: PerDiemRates | null;
   fetchStatus: "idle" | "loading" | "success" | "error";
   errorMessage?: string;

@@ -46,7 +46,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/parse-receipt", app.handleParseReceipt)
-	mux.HandleFunc("/api/v1/per-diem", app.handlePerDiemProxy)
+	mux.HandleFunc("/api/v1/perdiem", app.handlePerDiemProxy)
 
 	log.Printf("Starting server on port %s...", port)
 	if err := http.ListenAndServe(":"+port, enableCORS(mux)); err != nil {

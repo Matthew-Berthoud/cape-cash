@@ -20,6 +20,10 @@ function App() {
     [],
   );
 
+  useEffect(() => {
+    console.log({ trips });
+  }, [trips]);
+
   // Load receipts from IndexedDB on initial render
   useEffect(() => {
     db.receipts.toArray().then(setReceipts);
