@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { ExpenseItem, Receipt } from "../types";
 import { CATEGORIES, PROJECTS } from "../constants";
 import ConfirmModal from "./ConfirmModal";
@@ -39,21 +39,6 @@ const SplitIcon = () => (
     <path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h6a2 2 0 002-2H5z" />
   </svg>
 );
-
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
   expenseItems,

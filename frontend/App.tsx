@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Page, Receipt, ExpenseItem } from "./types";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { LOCAL_STORAGE_KEYS } from "./constants";

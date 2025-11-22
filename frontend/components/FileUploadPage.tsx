@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ParseResult, Receipt, ExpenseItem } from "../types";
+import { Receipt, ExpenseItem } from "../types";
 import { parseReceipt } from "../services/geminiService";
 
 interface FileUploadPageProps {
@@ -28,7 +28,7 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const files: File[] = event.target.files;
+    const files = event.target.files;
     if (!files) return;
 
     setIsProcessing(true);

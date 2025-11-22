@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ExpenseItem, Receipt } from "../types";
 
 declare global {
