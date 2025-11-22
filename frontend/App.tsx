@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Page, Receipt, ExpenseItem, Trip } from "./types";
+import { Page, Receipt, ExpenseItem } from "./types";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { LOCAL_STORAGE_KEYS } from "./constants";
 import FileUploadPage from "./components/FileUploadPage";
-import TripsPage from "./components/TripsPage";
 import ExpenseFormPage from "./components/ExpenseFormPage";
 import PdfPreviewPage from "./components/PdfPreviewPage";
 import { db } from "./services/idb";
@@ -15,14 +14,6 @@ function App() {
     LOCAL_STORAGE_KEYS.EXPENSE_ITEMS,
     [],
   );
-  const [trips, setTrips] = useLocalStorage<Trip[]>(
-    LOCAL_STORAGE_KEYS.TRIPS,
-    [],
-  );
-
-  useEffect(() => {
-    console.log({ trips });
-  }, [trips]);
 
   // Load receipts from IndexedDB on initial render
   useEffect(() => {
@@ -47,15 +38,6 @@ function App() {
             receipts={receipts}
             setReceipts={updateReceipts}
             setExpenseItems={setExpenseItems}
-            onContinue={() => setPage(Page.Trips)}
-          />
-        );
-      case Page.Trips:
-        return (
-          <TripsPage
-            trips={trips}
-            setTrips={setTrips}
-            onBack={() => setPage(Page.Upload)}
             onContinue={() => setPage(Page.Form)}
           />
         );
@@ -66,8 +48,7 @@ function App() {
             setReceipts={updateReceipts}
             expenseItems={expenseItems}
             setExpenseItems={setExpenseItems}
-            trips={trips}
-            onBack={() => setPage(Page.Trips)}
+            onBack={() => setPage(Page.Upload)}
             onContinue={() => setPage(Page.Preview)}
           />
         );
@@ -85,7 +66,7 @@ function App() {
             receipts={receipts}
             setReceipts={updateReceipts}
             setExpenseItems={setExpenseItems}
-            onContinue={() => setPage(Page.Trips)}
+            onContinue={() => setPage(Page.Form)}
           />
         );
     }

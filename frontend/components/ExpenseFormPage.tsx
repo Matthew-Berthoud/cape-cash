@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ExpenseItem, Receipt, Trip } from "../types";
+import { ExpenseItem, Receipt } from "../types";
 import { CATEGORIES, PROJECTS } from "../constants";
 import ConfirmModal from "./ConfirmModal";
 import ManageReceiptsModal from "./ManageReceiptsModal";
@@ -7,7 +7,6 @@ import ManageReceiptsModal from "./ManageReceiptsModal";
 interface ExpenseFormPageProps {
   expenseItems: ExpenseItem[];
   receipts: Receipt[];
-  trips: Trip[];
   setExpenseItems: React.Dispatch<React.SetStateAction<ExpenseItem[]>>;
   setReceipts: React.Dispatch<React.SetStateAction<Receipt[]>>;
   onBack: () => void;
@@ -59,7 +58,6 @@ const MONTH_NAMES = [
 const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
   expenseItems,
   receipts,
-  trips,
   setExpenseItems,
   setReceipts,
   onBack,
@@ -125,7 +123,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
       project: sourceItem.project,
       description: "",
       amount: "",
-      tripId: sourceItem.tripId,
     };
 
     const sourceIndex = expenseItems.findIndex(
@@ -146,7 +143,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
       project: "Overhead",
       description: "",
       amount: "",
-      tripId: "N/A",
     };
     setExpenseItems((prev) => [...prev, newExpenseItem]);
   };
@@ -161,8 +157,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
     );
     setEditingExpense(null);
   };
-
-  const showTripColumn = trips.length > 0;
 
   return (
     <>
@@ -213,14 +207,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
                     >
                       Date
                     </th>
-                    {showTripColumn && (
-                      <th
-                        scope="col"
-                        className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider"
-                      >
-                        Trip
-                      </th>
-                    )}
                     <th
                       scope="col"
                       className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider"
@@ -294,24 +280,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
                           className="w-40 p-1 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600"
                         />
                       </td>
-                      {showTripColumn && (
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <select
-                            value={item.tripId || "N/A"}
-                            onChange={(e) =>
-                              handleUpdate(item.id, "tripId", e.target.value)
-                            }
-                            className="w-48 p-1 border border-slate-300 rounded-md dark:bg-slate-700 dark:border-slate-600"
-                          >
-                            <option value="N/A">N/A</option>
-                            {trips.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.purpose}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      )}
                       <td className="px-3 py-2 whitespace-nowrap">
                         <select
                           value={item.category}
@@ -409,85 +377,6 @@ const ExpenseFormPage: React.FC<ExpenseFormPageProps> = ({
                 Continue
               </button>
             </div>
-          </div>
-          {/* GSA Per Diem Display Sidebar */}
-          <div className="w-1/4 bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-slate-700 dark:text-slate-300">
-              GSA Per Diem Limits
-            </h3>
-            {expenseItems.length > 0 &&
-            expenseItems[0].tripId &&
-            expenseItems[0].tripId !== "N/A" ? (
-              (() => {
-                const selectedTrip = trips.find(
-                  (t) => t.id === expenseItems[0].tripId,
-                );
-                if (selectedTrip && selectedTrip.perDiemRates) {
-                  const expenseDate = new Date(expenseItems[0].date);
-                  const monthName = MONTH_NAMES[expenseDate.getMonth()];
-                  const lodgingRate = selectedTrip.perDiemRates.lodging.find(
-                    (rate) => rate.month === monthName,
-                  );
-
-                  return (
-                    <div className="space-y-2">
-                      <p className="text-slate-600 dark:text-slate-400">
-                        <strong>Location:</strong> {selectedTrip.zip}
-                      </p>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        <strong>Date:</strong> {monthName}{" "}
-                        {expenseDate.getFullYear()}
-                      </p>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        <strong>Breakfast:</strong> $
-                        {selectedTrip.perDiemRates.mie.breakfast.toFixed(2)}
-                      </p>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        <strong>Lunch:</strong> $
-                        {selectedTrip.perDiemRates.mie.lunch.toFixed(2)}
-                      </p>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        <strong>Dinner:</strong> $
-                        {selectedTrip.perDiemRates.mie.dinner.toFixed(2)}
-                      </p>
-                      {lodgingRate && (
-                        <p className="text-slate-600 dark:text-slate-400">
-                          <strong>Hotel:</strong> $
-                          {lodgingRate.value.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                  );
-                } else if (
-                  selectedTrip &&
-                  selectedTrip.fetchStatus === "loading"
-                ) {
-                  return (
-                    <p className="text-slate-500 dark:text-slate-400">
-                      Loading per diem rates...
-                    </p>
-                  );
-                } else if (
-                  selectedTrip &&
-                  selectedTrip.fetchStatus === "error"
-                ) {
-                  return (
-                    <p className="text-red-500 dark:text-red-400">
-                      Error fetching rates: {selectedTrip.errorMessage}
-                    </p>
-                  );
-                }
-                return (
-                  <p className="text-slate-500 dark:text-slate-400">
-                    No per diem rates available for the selected trip.
-                  </p>
-                );
-              })()
-            ) : (
-              <p className="text-slate-500 dark:text-slate-400">
-                Select a trip to see per diem limits.
-              </p>
-            )}
           </div>
         </div>
       </div>
