@@ -15,13 +15,19 @@ const defaultParsedData: ParsedReceiptData = {
  * Calls your Go backend to parse the receipt.
  * The backend handles the Gemini API call and all retry logic.
  */
-export async function parseReceipt(base64Image: string): Promise<ParseResult> {
+export async function parseReceipt(base64Image: string, authToken?: string): Promise<ParseResult> {
   try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/parse-receipt`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: headers,
       // The Go backend expects this exact JSON structure
       body: JSON.stringify({ base64Image: base64Image }),
     });

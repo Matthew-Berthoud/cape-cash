@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Receipt, ExpenseItem } from "../types";
 import { parseReceipt } from "../services/geminiService";
+import { useAuth } from '../context/AuthContext';
 
 interface FileUploadPageProps {
   receipts: Receipt[];
@@ -22,6 +23,7 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
   setExpenseItems,
   onContinue,
 }) => {
+  const { authToken } = useAuth();
   const [uploadStatuses, setUploadStatuses] = useState<UploadStatus[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -71,7 +73,7 @@ const FileUploadPage: React.FC<FileUploadPageProps> = ({
 
           // --- MODIFIED PARSING LOGIC ---
           // This call no longer throws on *parse* errors
-          const result = await parseReceipt(base64);
+          const result = await parseReceipt(base64, authToken || undefined);
 
           // We *always* create an expense item,
           // using the data returned from parseReceipt
